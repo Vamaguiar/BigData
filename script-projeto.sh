@@ -2,7 +2,7 @@
 
 # Etapa 1 - Carregando o dataset no Hive e visualizando os dados com SQL
 
-CREATE DATABASE usecase location '/user/cloudera/projeto'; 
+CREATE DATABASE usecase location '/home/hadoop/projeto'; 
 
 CREATE TABLE pacientes (ID INT, IDADE INT, SEXO INT, PRESSAO_SANGUINEA INT, COLESTEROL INT, ACUCAR_SANGUE INT, ECG INT, BATIMENTOS INT, DOENCA INT ) ROW FORMAT DELIMITED FIELDS TERMINATED BY ',' STORED AS TEXTFILE; 
 
@@ -29,7 +29,7 @@ quanData = FOREACH diseaseGroup GENERATE group, Quantile(dadosPacientes.Idade) a
 DUMP quanData;
 
 
-# Etapa 3 - TransformaÁ„o de Dados com o Pig
+# Etapa 3 - Transforma√ß√£o de Dados com o Pig
 
 ageRange = FOREACH dadosPacientes GENERATE ID, CEIL(Idade/10) as AgeRange; 
 bpRange = FOREACH dadosPacientes GENERATE ID, CEIL(PressaoSanguinea/25) as bpRange; 
@@ -44,12 +44,12 @@ STORE predictionData INTO 'enhancedHeartDisease' USING PigStorage(',');
 
 
 
-# Etapa 4 - CriaÁ„o do Modelo Preditivo de ClassificaÁ„o
+# Etapa 4 - Cria√ß√£o do Modelo Preditivo de Classifica√ß√£o
 
 # Cria a pasta no HDFS
 hdfs dfs -mkdir /projeto
 
-# Copia o arquivo gerado pela transformaÁ„o com o Pig para o HDFS 
+# Copia o arquivo gerado pela transforma√ß√£o com o Pig para o HDFS 
 hdfs dfs -copyFromLocal enhancedHeartDisease/* /projeto
 
 # Cria um descritor para os dados
@@ -58,7 +58,7 @@ mahout describe -p /projeto/part-r-00000 -f /projeto/desc -d 6 N L
 # Divide os dados em treino e teste 
 mahout splitDataset --input /projeto/part-r-00000 --output /projeto/splitdata --trainingPercentage 0.7 --probePercentage 0.3
 
-# ConstrÛi o modelo RandomForest com uma ·rvore 
+# Constr√≥i o modelo RandomForest com uma √°rvore 
 mahout buildforest -d /projeto/splitdata/trainingSet/* -ds /projeto/desc -sl 3 -p -t 1 -o /projeto/model
 
 # Testa o modelo
@@ -67,16 +67,16 @@ mahout testforest -i /projeto/splitdata/probeSet -ds /projeto/desc -m /projeto/m
 
 --> Visualizar a Confusion Matrix
 
-# Etapa 5 - OtimizaÁ„o do Modelo Preditivo de ClassificaÁ„o
+# Etapa 5 - Otimiza√ß√£o do Modelo Preditivo de Classifica√ß√£o
 
-# Construir o modelo com 25 ·rvores, a fim de aumentar a acur·cia
+# Construir o modelo com 25 √°rvores, a fim de aumentar a acur√°cia
 mahout buildforest -d /projeto/splitdata/trainingSet/* -ds /projeto/desc -sl 3 -p -t 25 -o /projeto/model
 
 # Testa o modelo
 mahout testforest -i /projeto/splitdata/probeSet -ds /projeto/desc -m /projeto/model -a -mr -o /projeto/predictions
 
 
---> Aumentando o n˙mero de ·rvoresm aumentamos a acur·cia do modelo.
+--> Aumentando o n√∫mero de √°rvoresm aumentamos a acur√°cia do modelo.
 
 
 
